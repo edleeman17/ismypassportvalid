@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Is My Passport Valid? — UK Travel Checker</title>
+    <meta
+      name="description"
+      content="Check whether your UK passport is valid for your trip and your return home. Rules sourced from gov.uk. Not official — always confirm with gov.uk."
+    />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛂</text></svg>" />
+    <!-- Plausible analytics (self-hosted, cookieless) + outbound-link tracking -->
+    <script defer data-domain="ismypassportvalid.co.uk" src="https://clicks.bowlerdesign.co.uk/js/script.outbound-links.js"></script>
+    <script>
+      window.plausible = window.plausible || function () { (window.plausible.q = window.plausible.q || []).push(arguments); };
+    </script>
+  </head>
+  <body>
+    <main class="wrap">
+      <header class="head">
+        <div class="badge">🛂</div>
+        <h1 data-seo-h1>Is my passport valid?</h1>
+        <p data-seo-intro>
+          For <strong>British citizen</strong> passport holders. We check your destination's entry
+          rules <em>and</em> your return to the UK.
+        </p>
+      </header>
+
+      <form id="checker" class="card">
+        <label class="field" for="dest-search">
+          Where are you flying to?
+          <div class="combo">
+            <input
+              id="dest-search"
+              type="text"
+              autocomplete="off"
+              autocapitalize="off"
+              spellcheck="false"
+              placeholder="Country, city, island or airport — e.g. Lanzarote, ALC"
+              role="combobox"
+              aria-expanded="false"
+              aria-autocomplete="list"
+              aria-controls="dest-list"
+              required
+            />
+            <input id="destination" type="hidden" />
+            <ul id="dest-list" class="combo-list hidden" role="listbox"></ul>
+          </div>
+        </label>
+
+        <div class="grid2">
+          <label class="field">
+            Passport expiry date
+            <input id="expiry" type="date" required />
+          </label>
+          <label class="field">
+            Passport issue date <span class="opt">(optional)</span>
+            <input id="issue" type="date" />
+          </label>
+          <label class="field">
+            Outbound date (you arrive)
+            <input id="outbound" type="date" required />
+          </label>
+          <label class="field">
+            Return date (you fly home)
+            <input id="return" type="date" required />
+          </label>
+        </div>
+
+        <button type="submit">Check my passport</button>
+        <p id="form-error" class="form-error hidden"></p>
+      </form>
+
+      <section id="result" class="hidden" aria-live="polite"></section>
+
+      <!-- Prerendered per-country SEO content goes here (empty on the homepage / in dev). -->
+      <section data-seo-content></section>
+
+      <section class="disclaimer">
+        <strong>Not official advice.</strong> Entry rules change and this tool may be out of date or
+        wrong. Always confirm on
+        <a href="https://www.gov.uk/foreign-travel-advice" target="_blank" rel="noopener">gov.uk</a>
+        and with your airline before you travel. We accept no responsibility for any loss arising from
+        incorrect or outdated information.
+        <br /><br />
+        🔒 <strong>Your privacy:</strong> your passport dates are checked entirely in your browser. They
+        are never sent to us, logged or stored.
+      </section>
+
+      <nav class="dests" aria-label="Check by destination" data-seo-links></nav>
+
+      <footer>
+        <div id="affiliate" class="links"></div>
+        <p class="fine">
+          Some links are affiliate links — we may earn a small commission at no cost to you.
+          As an Amazon Associate we earn from qualifying purchases.
+        </p>
+        <p class="fine">
+          Contains public sector information from
+          <a href="https://www.gov.uk/foreign-travel-advice" target="_blank" rel="noopener">gov.uk foreign travel advice</a>,
+          licensed under the
+          <a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" target="_blank" rel="noopener">Open Government Licence v3.0</a>.
+        </p>
+      </footer>
+    </main>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

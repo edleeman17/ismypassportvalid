@@ -1,0 +1,9 @@
+services:
+  passport-valid:
+    build: .
+    container_name: passport-valid
+    restart: unless-stopped
+    ports:
+      - "8090:80"
+    # To serve at passport.lan via Traefik instead, add the pi5 traefik labels
+    # and a Pi-hole DNS host entry, then drop the ports mapping.
