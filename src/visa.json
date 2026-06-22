@@ -1,0 +1,16 @@
+{
+  "_note": "Short visa/travel-authorisation note for British citizens, tourist stays. Always defers to gov.uk for detail. Keep accurate; re-check with the monthly gov.uk routine.",
+  "usa": "You need an ESTA (visa waiver) approved before you travel.",
+  "canada": "You need an eTA before you fly.",
+  "australia": "You need an ETA or eVisitor before you travel.",
+  "india": "You need an e-Visa arranged before you travel.",
+  "china": "You need a visa before you travel (some transit exemptions apply).",
+  "vietnam": "You need an e-visa before you travel.",
+  "sri-lanka": "You need an ETA before you travel.",
+  "indonesia": "You need a visa on arrival or e-VOA.",
+  "egypt": "You need a visa (e-visa or visa on arrival).",
+  "turkey": "No visa needed for tourist stays up to 90 days.",
+  "thailand": "No visa needed for tourist stays (check the current day limit on gov.uk).",
+  "morocco": "No visa needed for stays up to 90 days.",
+  "mexico": "No visa needed for tourism, but you must complete the entry form."
+}

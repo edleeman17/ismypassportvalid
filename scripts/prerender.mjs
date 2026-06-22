@@ -11,21 +11,36 @@ const SITE_URL = (process.env.SITE_URL || "https://ismypassportvalid.co.uk").rep
 const countries = JSON.parse(fs.readFileSync("src/countries.json", "utf8"));
 const travel = JSON.parse(fs.readFileSync("src/travel.json", "utf8"));
 const config = JSON.parse(fs.readFileSync("src/config.json", "utf8"));
+const visa = JSON.parse(fs.readFileSync("src/visa.json", "utf8"));
 const template = fs.readFileSync(path.join(dist, "index.html"), "utf8");
 
 const powerQueries = travel._powerQueries;
+const climateItems = {
+  beach: { icon: "🧴", label: "Reef-safe suncream", blurb: "Don't get caught out", q: "reef safe suncream" },
+  tropical: { icon: "🦟", label: "Mosquito repellent", blurb: "Bite-free evenings", q: "mosquito repellent deet travel" },
+  cold: { icon: "🧤", label: "Thermal base layers", blurb: "Stay warm out there", q: "thermal base layers" },
+};
 const amazonUrl = (q) =>
   `https://www.${config.amazonDomain}/s?k=${encodeURIComponent(q)}&tag=${config.amazonTag}`;
 function amazonItems(slug, name) {
   const t = travel[slug] ?? {};
   const out = [
-    { label: `${name} travel guide`, q: `${name} travel guide` },
-    { label: `${name} map`, q: `${name} travel map` },
+    { icon: "📘", label: `${name} guidebook`, blurb: "Plan it like a local", q: `${name} travel guide` },
   ];
+  if (t.climate && climateItems[t.climate]) out.push(climateItems[t.climate]);
+  if (t.longHaul) out.push({ icon: "🛌", label: "Neck pillow", blurb: "Survive the long flight", q: "travel neck pillow" });
   const pq = t.power ? powerQueries[t.power] : null;
-  if (pq) out.push({ label: "Travel plug adapter", q: pq });
-  if (t.drivable) out.push({ label: "European driving kit", q: "European car driving kit" });
-  return out.map((i) => ({ label: i.label, url: amazonUrl(i.q) }));
+  if (pq) out.push({ icon: "🔌", label: "Travel plug adapter", blurb: "Keep your phone charged", q: pq });
+  if (t.drivable)
+    out.push({ icon: "🚗", label: "European driving kit", blurb: "Driving over? Stay road-legal", q: "European car driving kit" });
+  out.push({ icon: "🧳", label: "Packing cubes", blurb: "Pack smarter, fit more in", q: "packing cubes" });
+  out.push({ icon: "🗺️", label: `${name} map`, blurb: "Find your way around", q: `${name} travel map` });
+  return out.map((i) => ({ icon: i.icon, label: i.label, blurb: i.blurb, url: amazonUrl(i.q) }));
+}
+function visaNote(c) {
+  if (visa[c.govukSlug]) return visa[c.govukSlug];
+  if (c.zone === "schengen") return "No visa needed for short stays (up to 90 days in any 180).";
+  return "Check the visa requirements for your trip on gov.uk.";
 }
 
 const entries = Object.entries(countries)
@@ -112,13 +127,30 @@ for (const [slug, c] of entries) {
       <h2>Is my UK passport valid for ${esc(c.name)}?</h2>
       <p class="rule-line">To enter ${esc(c.name)}, your passport must be ${esc(sentence)}.</p>
       <blockquote>${esc(c.quote)}</blockquote>
+      <p class="visa-line">🛂 <strong>Visa:</strong> ${esc(visaNote(c))}</p>
+      ${
+        c.zone === "schengen"
+          ? `<p class="etias-line">✈️ <strong>EU travel:</strong> the EU is introducing the EES (biometric entry/exit checks) and ETIAS (a paid visa-waiver authorisation — not a visa). Start dates have shifted, so <a href="${esc(config.etiasUrl)}" target="_blank" rel="noopener">check gov.uk</a> before you go.</p>`
+          : ""
+      }
       <p><a href="${esc(c.sourceUrl)}" target="_blank" rel="noopener">Official ${esc(c.name)} entry requirements on gov.uk →</a></p>
       <p>Enter your passport and travel dates above for an instant yes/no for your exact trip, including your return to the UK.</p>
     </div>
-    <div class="card seo-block">
+    <div class="actions">
+      <a class="act act-primary" href="${esc(config.insuranceUrl)}" target="_blank" rel="sponsored noopener">🛡️ Get travel insurance for ${esc(c.name)} →</a>
+    </div>
+    <div class="card ess">
       <h2>Travel essentials for ${esc(c.name)}</h2>
-      <div class="links">${amazonItems(slug, c.name)
-        .map((i) => `<a href="${esc(i.url)}" target="_blank" rel="sponsored noopener">${esc(i.label)}</a>`)
+      <p class="ess-sub">Handpicked on Amazon for your trip 👇</p>
+      <div class="ess-grid">${amazonItems(slug, c.name)
+        .map(
+          (i) => `<a class="ess-card" href="${esc(i.url)}" target="_blank" rel="sponsored noopener">
+          <span class="ess-icon">${i.icon}</span>
+          <span class="ess-title">${esc(i.label)}</span>
+          <span class="ess-blurb">${esc(i.blurb)}</span>
+          <span class="ess-cta">View on Amazon →</span>
+        </a>`,
+        )
         .join("")}</div>
       <p class="fine">As an Amazon Associate we earn from qualifying purchases.</p>
     </div>`;

@@ -1,6 +1,8 @@
 import "./styles.css";
 import rawCountries from "./countries.json";
 import rawAliases from "./aliases.json";
+import rawVisa from "./visa.json";
+import config from "./config.json";
 import { computeVerdict, type Country, type Verdict } from "./verdict";
 import { amazonItems } from "./affiliate";
 
@@ -9,6 +11,14 @@ const countries = Object.fromEntries(
   Object.entries(rawCountries as Record<string, unknown>).filter(([k]) => k !== "_meta"),
 ) as Record<string, Country>;
 const aliases = rawAliases as Record<string, string[]>;
+const visa = rawVisa as Record<string, string>;
+
+// Visa/travel-authorisation note for a country (curated, else Schengen default, else generic).
+function visaNote(c: Country): string {
+  if (visa[c.govukSlug]) return visa[c.govukSlug];
+  if (c.zone === "schengen") return "No visa needed for short stays (up to 90 days in any 180).";
+  return "Check the visa requirements for your trip on gov.uk.";
+}
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -143,8 +153,8 @@ form.addEventListener("submit", (e) => {
   if (!country) {
     return showError("Pick a destination from the list (e.g. start typing Lanzarote, then choose it).");
   }
-  if (!expiry || !outbound || !ret) {
-    return showError("Please fill in your passport expiry, outbound and return dates.");
+  if (!expiry || !issue || !outbound || !ret) {
+    return showError("Please fill in your passport issue + expiry dates and your travel dates.");
   }
   if (ret < outbound) {
     return showError("Your return date is before your outbound date.");
@@ -158,7 +168,7 @@ form.addEventListener("submit", (e) => {
     country,
   });
 
-  render(verdict, country);
+  render(verdict, country, expiry);
   resultEl.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
@@ -167,7 +177,7 @@ function showError(msg: string) {
   errorEl.classList.remove("hidden");
 }
 
-function render(v: Verdict, country: Country) {
+function render(v: Verdict, country: Country, expiry: string) {
   const banner = v.incomplete
     ? {
         cls: "maybe",
@@ -207,9 +217,21 @@ function render(v: Verdict, country: Country) {
 
     <ul class="checks card">${checksHtml}</ul>
 
+    <div class="actions">
+      ${!v.ok && !v.incomplete ? `<a class="act act-warn" href="https://www.gov.uk/renew-adult-passport" target="_blank" rel="noopener">🛂 Renew your UK passport →</a>` : ""}
+      <a class="act act-primary" href="${esc(config.insuranceUrl)}" target="_blank" rel="sponsored noopener">🛡️ Get travel insurance for ${esc(country.name)} →</a>
+      <button type="button" id="reminder-btn" class="act act-soft">📅 Add a passport renewal reminder</button>
+    </div>
+
     <div class="card src">
       <h2>Source — gov.uk</h2>
       <blockquote>${esc(country.quote)}</blockquote>
+      <p class="visa-line">🛂 <strong>Visa:</strong> ${esc(visaNote(country))}</p>
+      ${
+        country.zone === "schengen"
+          ? `<p class="etias-line">✈️ <strong>EU travel:</strong> the EU is introducing the EES (biometric entry/exit checks) and ETIAS (a paid visa-waiver authorisation — not a visa). Start dates have shifted, so <a href="${esc(config.etiasUrl)}" target="_blank" rel="noopener">check gov.uk</a> before you go.</p>`
+          : ""
+      }
       <p style="margin:0.75rem 0 0;font-size:0.9rem;">
         <a href="${esc(country.sourceUrl)}" target="_blank" rel="noopener">
           Read the official ${esc(country.name)} entry requirements →
@@ -222,11 +244,19 @@ function render(v: Verdict, country: Country) {
       </details>
     </div>
 
-    <div class="card seo-block">
+    <div class="card ess">
       <h2>Travel essentials for ${esc(country.name)}</h2>
-      <div class="links">
+      <p class="ess-sub">Handpicked on Amazon for your trip 👇</p>
+      <div class="ess-grid">
         ${amazonItems(country.govukSlug, country.name)
-          .map((i) => `<a href="${esc(i.url)}" target="_blank" rel="sponsored noopener">${esc(i.label)}</a>`)
+          .map(
+            (i) => `<a class="ess-card" href="${esc(i.url)}" target="_blank" rel="sponsored noopener">
+            <span class="ess-icon">${i.icon}</span>
+            <span class="ess-title">${esc(i.label)}</span>
+            <span class="ess-blurb">${esc(i.blurb)}</span>
+            <span class="ess-cta">View on Amazon →</span>
+          </a>`,
+          )
           .join("")}
       </div>
       <p class="fine">As an Amazon Associate we earn from qualifying purchases.</p>
@@ -245,6 +275,56 @@ function render(v: Verdict, country: Country) {
       loadLive(country.govukSlug);
     }
   });
+
+  document.getElementById("reminder-btn")?.addEventListener("click", () => downloadReminder(expiry));
+}
+
+// Build + download an .ics calendar event nudging passport renewal ~9 months before expiry.
+function downloadReminder(expiry: string) {
+  const remind = addMonthsISO(expiry, -9); // renew well ahead — many countries need 3-6 months validity
+  const dt = (iso: string) => iso.replace(/-/g, "");
+  const stamp = new Date().toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+  const expHuman = new Date(expiry + "T00:00:00Z").toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+  const ics = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//ismypassportvalid//EN",
+    "CALSCALE:GREGORIAN",
+    "BEGIN:VEVENT",
+    `UID:passport-${dt(expiry)}@ismypassportvalid.co.uk`,
+    `DTSTAMP:${stamp}`,
+    `DTSTART;VALUE=DATE:${dt(remind)}`,
+    `DTEND;VALUE=DATE:${dt(remind)}`,
+    "SUMMARY:Renew your UK passport",
+    `DESCRIPTION:Your passport expires ${expHuman}. Renew now to stay valid for travel — many countries need 3 to 6 months left. Renew: https://www.gov.uk/renew-adult-passport`,
+    "BEGIN:VALARM",
+    "TRIGGER:-P1D",
+    "ACTION:DISPLAY",
+    "DESCRIPTION:Renew your UK passport",
+    "END:VALARM",
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].join("\r\n");
+  const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "passport-renewal-reminder.ics";
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// Lightweight month math for the reminder (UTC, clamps end-of-month).
+function addMonthsISO(iso: string, months: number): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  const t = new Date(Date.UTC(y, m - 1 + months, 1));
+  const last = new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth() + 1, 0)).getUTCDate();
+  t.setUTCDate(Math.min(d, last));
+  return t.toISOString().slice(0, 10);
 }
 
 async function loadLive(slug: string) {
