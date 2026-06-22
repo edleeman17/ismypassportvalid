@@ -39,6 +39,8 @@ export interface Check {
   label: string;
   status: CheckStatus;
   detail: string;
+  /** Passed, but with very little margin (see TIGHT_DAYS). UI flags it amber. */
+  tight?: boolean;
 }
 
 export interface Verdict {
@@ -46,8 +48,13 @@ export interface Verdict {
   ok: boolean;
   /** true if a result could not be computed (e.g. missing issue date). */
   incomplete: boolean;
+  /** true if the verdict is a pass but at least one check only just scraped through. */
+  tight: boolean;
   checks: Check[];
 }
+
+/** A passing check with this many days of slack (or fewer) is flagged "cutting it close". */
+export const TIGHT_DAYS = 7;
 
 // ---- date helpers (UTC, no timezone drift) ----
 
@@ -85,6 +92,15 @@ function onOrAfter(a: string, b: string): boolean {
   return parse(a).getTime() >= parse(b).getTime();
 }
 
+/** Whole days from b to a (a - b). Positive when a is later. */
+function daysBetween(a: string, b: string): number {
+  return Math.round((parse(a).getTime() - parse(b).getTime()) / 86_400_000);
+}
+
+function marginNote(days: number): string {
+  return ` ⚠ That's only ${days} day${days === 1 ? "" : "s"} of margin — renew before you travel to avoid being turned away.`;
+}
+
 function human(iso: string): string {
   return parse(iso).toLocaleDateString("en-GB", {
     day: "numeric",
@@ -109,6 +125,8 @@ export function computeVerdict(input: VerdictInput): Verdict {
       ? addDays(anchorDate, rule.validBeyondDays)
       : addMonths(anchorDate, rule.validBeyondMonths);
   const validOk = onOrAfter(passportExpiry, requiredUntil);
+  const validMargin = daysBetween(passportExpiry, requiredUntil);
+  const validTight = validOk && validMargin <= TIGHT_DAYS;
   const anchorWord = rule.anchor === "departure" ? "you leave" : "you arrive in";
   const bufferText =
     rule.validBeyondDays != null
@@ -118,9 +136,12 @@ export function computeVerdict(input: VerdictInput): Verdict {
     id: "destination-validity",
     label: `${country.name} entry — passport validity`,
     status: validOk ? "pass" : "fail",
-    detail: hasBuffer
-      ? `Needs to be valid until at least ${human(requiredUntil)} (${bufferText} after ${anchorWord} ${country.name}). Yours expires ${human(passportExpiry)}.`
-      : `Needs to be valid for your whole stay. Yours expires ${human(passportExpiry)}.`,
+    tight: validTight,
+    detail:
+      (hasBuffer
+        ? `Needs to be valid until at least ${human(requiredUntil)} (${bufferText} after ${anchorWord} ${country.name}). Yours expires ${human(passportExpiry)}.`
+        : `Needs to be valid for your whole stay. Yours expires ${human(passportExpiry)}.`) +
+      (validTight ? marginNote(validMargin) : ""),
   });
 
   // 2. Issue-date rule (only if the country has one).
@@ -128,11 +149,16 @@ export function computeVerdict(input: VerdictInput): Verdict {
     if (passportIssue) {
       const issueDeadline = addYears(passportIssue, rule.issuedWithinYears);
       const issueOk = onOrAfter(issueDeadline, outboundDate);
+      const issueMargin = daysBetween(issueDeadline, outboundDate);
+      const issueTight = issueOk && issueMargin <= TIGHT_DAYS;
       checks.push({
         id: "destination-issue",
         label: `${country.name} entry — issue date`,
         status: issueOk ? "pass" : "fail",
-        detail: `Must have been issued less than ${rule.issuedWithinYears} years before you arrive (${human(outboundDate)}). Yours was issued ${human(passportIssue)}.`,
+        tight: issueTight,
+        detail:
+          `Must have been issued less than ${rule.issuedWithinYears} years before you arrive (${human(outboundDate)}). Yours was issued ${human(passportIssue)}.` +
+          (issueTight ? marginNote(issueMargin) : ""),
       });
     } else {
       checks.push({
@@ -146,15 +172,23 @@ export function computeVerdict(input: VerdictInput): Verdict {
 
   // 3. Return to the UK — British citizen: passport must simply be unexpired on the return date.
   const returnOk = onOrAfter(passportExpiry, returnDate);
+  const returnMargin = daysBetween(passportExpiry, returnDate);
+  const returnTight = returnOk && returnMargin <= TIGHT_DAYS;
   checks.push({
     id: "return-to-uk",
     label: "Return to the UK",
     status: returnOk ? "pass" : "fail",
-    detail: `As a British citizen you need a passport that is still valid on your return date (${human(returnDate)}). Yours expires ${human(passportExpiry)}.`,
+    tight: returnTight,
+    detail:
+      `As a British citizen you need a passport that is still valid on your return date (${human(returnDate)}). Yours expires ${human(passportExpiry)}.` +
+      (returnTight
+        ? ` ⚠ It expires within ${TIGHT_DAYS} days of your return — airlines may refuse to board you. Renew before you travel.`
+        : ""),
   });
 
   const incomplete = checks.some((c) => c.status === "unknown");
   const ok = checks.every((c) => c.status === "pass");
+  const tight = ok && checks.some((c) => c.tight);
 
-  return { ok, incomplete, checks };
+  return { ok, incomplete, tight, checks };
 }

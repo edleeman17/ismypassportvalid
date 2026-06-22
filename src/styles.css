@@ -1,31 +1,39 @@
-/* Public-facing consumer design: warm, trustworthy, clear. Plain CSS, no framework. */
+/* Passport-document aesthetic: ink navy + UK-passport burgundy on warm paper.
+   Serif display (Spectral), machine-readable mono (IBM Plex Mono) for dates.
+   Sharp corners, hairline rules, stamp-style verdict. Plain CSS, no framework. */
 
 :root {
-  --bg: hsl(214 32% 97%);
-  --card: #ffffff;
-  --border: hsl(214 20% 90%);
-  --text: hsl(222 24% 16%);
-  --muted: hsl(222 12% 45%);
+  --paper: hsl(43 33% 95%); /* #f7f4ec warm document stock */
+  --paper-2: hsl(43 28% 92%); /* slightly deeper inset */
+  --card: hsl(44 40% 98%);
+  --border: hsl(40 18% 78%);
+  --rule: hsl(40 16% 70%); /* hairline rules */
+  --ink: hsl(217 69% 14%); /* #0b1d3a navy ink */
+  --ink-soft: hsl(217 30% 30%);
+  --muted: hsl(217 14% 42%);
 
-  --accent: hsl(222 78% 52%);
-  --accent-hover: hsl(222 78% 46%);
+  --accent: hsl(350 58% 31%); /* #7d2231 passport burgundy */
+  --accent-hover: hsl(350 60% 25%);
+  --gold: hsl(40 52% 58%); /* embossed detail */
 
-  --ok: hsl(151 60% 38%);
-  --ok-bg: hsl(151 60% 38%);
-  --no: hsl(5 74% 52%);
-  --no-bg: hsl(5 74% 52%);
-  --maybe: hsl(38 92% 48%);
-  --maybe-bg: hsl(38 92% 50%);
+  --ok: hsl(151 55% 30%);
+  --ok-bg: hsl(151 45% 96%);
+  --no: hsl(5 68% 42%);
+  --no-bg: hsl(5 60% 97%);
+  --maybe: hsl(35 75% 38%);
+  --maybe-bg: hsl(40 70% 96%);
 
   --amazon: hsl(36 100% 50%);
-  --amazon-text: hsl(33 100% 33%);
+  --amazon-text: hsl(33 100% 30%);
 
-  --radius: 12px;
-  --radius-sm: 10px;
-  --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 4px 16px rgba(16, 24, 40, 0.06);
-  --shadow-lg: 0 8px 30px rgba(16, 24, 40, 0.12);
+  --radius: 4px;
+  --radius-sm: 3px;
+  --shadow: 0 1px 0 rgba(11, 29, 58, 0.04), 0 1px 3px rgba(11, 29, 58, 0.06);
+  --shadow-lg: 0 2px 8px rgba(11, 29, 58, 0.1);
 
-  --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --serif: "Spectral", Georgia, "Times New Roman", serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 * {
@@ -39,8 +47,11 @@ body {
   font-family: var(--font);
   font-size: 1rem;
   line-height: 1.55;
-  color: var(--text);
-  background: var(--bg);
+  color: var(--ink);
+  background-color: var(--paper);
+  /* faint document grain */
+  background-image: radial-gradient(hsl(40 20% 86% / 0.5) 0.5px, transparent 0.5px);
+  background-size: 14px 14px;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -53,30 +64,51 @@ body {
   gap: 1.5rem;
 }
 
-/* Header */
+/* Header — styled as a passport cover panel */
 .head {
   text-align: center;
+  background: var(--ink);
+  color: hsl(43 40% 92%);
+  border-radius: var(--radius);
+  padding: 1.9rem 1.5rem;
+  position: relative;
+  box-shadow: var(--shadow-lg);
+}
+/* inset gold hairline frame, like the embossed border on a passport cover */
+.head::after {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border: 1px solid hsl(40 52% 58% / 0.45);
+  border-radius: 2px;
+  pointer-events: none;
 }
 .head .badge {
-  font-size: 2.75rem;
+  font-size: 2.5rem;
   line-height: 1;
 }
 .head h1 {
   margin: 0.5rem 0 0;
-  font-size: 1.9rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-family: var(--serif);
+  font-size: 1.85rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: hsl(43 45% 94%);
 }
 @media (min-width: 600px) {
   .head h1 {
-    font-size: 2.25rem;
+    font-size: 2.2rem;
   }
 }
 .head p {
-  margin: 0.5rem auto 0;
+  margin: 0.6rem auto 0;
   max-width: 34rem;
-  color: var(--muted);
-  font-size: 0.95rem;
+  color: hsl(43 22% 78%);
+  font-size: 0.92rem;
+}
+.head strong {
+  color: var(--gold);
+  font-weight: 600;
 }
 
 /* Card */
@@ -98,14 +130,19 @@ form.card {
 .field {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-  font-size: 0.9rem;
-  font-weight: 600;
+  gap: 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--ink-soft);
   min-width: 0;
 }
 .field .opt {
   color: var(--muted);
-  font-weight: 400;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: none;
 }
 /* Destination combobox */
 .combo {
@@ -133,25 +170,31 @@ form.card {
   align-items: baseline;
   gap: 0.75rem;
   padding: 0.6rem;
-  border-radius: 8px;
+  border-radius: 2px;
   cursor: pointer;
   font-size: 0.95rem;
   font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ink);
 }
 .combo-list li.active,
 .combo-list li:hover {
-  background: var(--bg);
+  background: var(--paper-2);
 }
 .combo-list li .h {
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 400;
+  font-family: var(--mono);
   white-space: nowrap;
 }
 .combo-empty {
   padding: 0.6rem;
   color: var(--muted);
   font-size: 0.9rem;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .grid2 {
@@ -168,31 +211,42 @@ form.card {
 input,
 select {
   font: inherit;
+  font-size: 1rem;
   font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
   line-height: 1.4;
   min-height: 46px;
-  background: var(--card);
+  color: var(--ink);
+  background: hsl(44 40% 99%);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 0.65rem 0.85rem;
-  color: var(--text);
   width: 100%;
   max-width: 100%;
   min-width: 0;
   display: block;
 }
+/* Date + destination read like machine-readable passport data */
+input[type="date"],
+#dest-search {
+  font-family: var(--mono);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+#dest-search::placeholder {
+  letter-spacing: 0;
+  color: var(--muted);
+}
 /* iOS sizes date inputs by content; force them to fill the field, not overflow it */
 input[type="date"] {
   -webkit-appearance: none;
   appearance: none;
+  padding-right: 0.85rem;
 }
 select {
   padding-right: 2rem;
   cursor: pointer;
-}
-/* Date fields: keep the native calendar icon / digits off the right border */
-input[type="date"] {
-  padding-right: 0.85rem;
 }
 input[type="date"]::-webkit-calendar-picker-indicator {
   margin-left: 0.5rem;
@@ -212,13 +266,15 @@ select:focus {
 
 button {
   font: inherit;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
   background: var(--accent);
-  color: #fff;
+  color: hsl(43 40% 95%);
   border: none;
   border-radius: var(--radius-sm);
-  padding: 0.85rem 1.25rem;
+  padding: 0.95rem 1.25rem;
   cursor: pointer;
   transition: background 150ms ease, transform 80ms ease;
   margin-top: 0.25rem;
@@ -234,40 +290,59 @@ button:active {
   color: var(--no);
   font-size: 0.875rem;
   font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
-/* Verdict banner */
+/* Verdict — rubber-stamp on the document */
 .verdict {
+  position: relative;
   border-radius: var(--radius);
-  padding: 1.75rem 1.5rem;
+  padding: 2rem 1.5rem;
   text-align: center;
-  color: #fff;
-  box-shadow: var(--shadow-lg);
+  background: var(--card);
+  border: 2px solid currentColor;
+  box-shadow: var(--shadow);
+}
+/* double-ruled stamp frame */
+.verdict::after {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  opacity: 0.5;
+  pointer-events: none;
 }
 .verdict.ok {
+  color: var(--ok);
   background: var(--ok-bg);
 }
 .verdict.no {
+  color: var(--no);
   background: var(--no-bg);
 }
 .verdict.maybe {
+  color: var(--maybe);
   background: var(--maybe-bg);
 }
 .verdict .mark {
-  font-size: 3rem;
+  font-size: 2.75rem;
   font-weight: 800;
   line-height: 1;
 }
 .verdict .title {
-  font-size: 1.5rem;
+  font-family: var(--serif);
+  font-size: 1.6rem;
   font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   margin-top: 0.5rem;
-  letter-spacing: -0.01em;
 }
 .verdict .sub {
+  color: var(--ink-soft);
   font-size: 0.9rem;
-  margin-top: 0.35rem;
-  opacity: 0.92;
+  margin-top: 0.5rem;
 }
 
 /* Action buttons (insurance / renew / reminder) */
@@ -280,10 +355,13 @@ button:active {
   display: block;
   width: 100%;
   text-align: center;
-  padding: 0.85rem 1rem;
+  padding: 0.9rem 1rem;
   border-radius: var(--radius-sm);
   font: inherit;
   font-weight: 700;
+  font-size: 0.92rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
   text-decoration: none;
   cursor: pointer;
   border: 1px solid transparent;
@@ -295,21 +373,21 @@ button:active {
 }
 .act-primary {
   background: var(--accent);
-  color: #fff;
+  color: hsl(43 40% 95%);
 }
 .act-primary:hover {
   background: var(--accent-hover);
 }
 .act-warn {
   background: var(--no);
-  color: #fff;
+  color: hsl(43 40% 96%);
 }
 .act-warn:hover {
   opacity: 0.9;
 }
 .act-soft {
   background: var(--card);
-  color: var(--text);
+  color: var(--ink);
   border-color: var(--border);
 }
 .act-soft:hover {
@@ -323,11 +401,11 @@ button:active {
   font-size: 0.85rem;
 }
 .etias-line {
-  background: hsl(214 60% 96%);
-  border: 1px solid hsl(214 40% 88%);
-  border-radius: var(--radius-sm);
-  padding: 0.6rem 0.75rem;
-  color: hsl(214 30% 30%);
+  background: var(--paper-2);
+  border-left: 3px solid var(--gold);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: 0.65rem 0.8rem;
+  color: var(--ink-soft);
 }
 .etias-line a {
   color: var(--accent);
@@ -343,7 +421,7 @@ button:active {
   display: flex;
   gap: 0.75rem;
   padding: 0.85rem 0;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--rule);
 }
 .checks li:last-child {
   border-bottom: none;
@@ -359,7 +437,8 @@ button:active {
 .checks .m.fail {
   color: var(--no);
 }
-.checks .m.unknown {
+.checks .m.unknown,
+.checks .m.tight {
   color: var(--maybe);
 }
 .checks .lbl {
@@ -373,20 +452,21 @@ button:active {
 
 /* Source block */
 .src h2 {
-  margin: 0 0 0.5rem;
-  font-size: 0.78rem;
+  margin: 0 0 0.6rem;
+  font-size: 0.72rem;
   color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.1em;
   font-weight: 700;
 }
 blockquote {
   margin: 0;
-  border-left: 3px solid var(--border);
+  border-left: 3px solid var(--gold);
+  font-family: var(--serif);
   font-style: italic;
-  padding: 0.25rem 0 0.25rem 0.9rem;
-  font-size: 0.9rem;
-  color: var(--text);
+  font-size: 1rem;
+  padding: 0.15rem 0 0.15rem 0.95rem;
+  color: var(--ink);
 }
 .src a {
   color: var(--accent);
@@ -398,7 +478,8 @@ blockquote {
 }
 .src .verified {
   color: var(--muted);
-  font-size: 0.78rem;
+  font-family: var(--mono);
+  font-size: 0.76rem;
   margin: 0.5rem 0 0;
 }
 details summary {
@@ -411,7 +492,7 @@ details summary {
 .govuk-content {
   font-size: 0.875rem;
   margin-top: 0.6rem;
-  color: var(--text);
+  color: var(--ink);
 }
 .govuk-content :is(p, ul, ol) {
   margin: 0.5rem 0;
@@ -432,15 +513,16 @@ details summary {
 
 /* Disclaimer */
 .disclaimer {
-  border: 1px solid hsl(38 80% 80%);
+  border: 1px solid var(--gold);
+  border-left-width: 3px;
   border-radius: var(--radius-sm);
-  background: hsl(45 90% 96%);
-  padding: 0.9rem 1rem;
+  background: var(--maybe-bg);
+  padding: 0.95rem 1rem;
   font-size: 0.85rem;
-  color: hsl(30 40% 28%);
+  color: hsl(30 35% 26%);
 }
 .disclaimer strong {
-  color: hsl(28 50% 22%);
+  color: hsl(28 45% 20%);
 }
 .disclaimer a {
   color: inherit;
@@ -450,8 +532,9 @@ details summary {
 /* Per-country SEO content block (prerendered) */
 .seo-block h2 {
   margin: 0 0 0.5rem;
-  font-size: 1.15rem;
-  font-weight: 800;
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  font-weight: 700;
 }
 .seo-block p {
   margin: 0.5rem 0;
@@ -472,8 +555,9 @@ details summary {
 /* Affiliate "Travel essentials" cards */
 .ess h2 {
   margin: 0 0 0.1rem;
-  font-size: 1.15rem;
-  font-weight: 800;
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  font-weight: 700;
 }
 .ess-sub {
   margin: 0 0 0.9rem;
@@ -492,9 +576,9 @@ details summary {
   padding: 0.9rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  background: var(--card);
+  background: hsl(44 40% 99%);
   text-decoration: none;
-  color: var(--text);
+  color: var(--ink);
   transition: border-color 150ms ease, box-shadow 150ms ease, transform 80ms ease;
 }
 .ess-card:hover {
@@ -517,8 +601,10 @@ details summary {
 }
 .ess-cta {
   margin-top: 0.45rem;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   color: var(--amazon-text);
 }
 
@@ -531,9 +617,9 @@ details summary {
 }
 .dests .dests-label {
   width: 100%;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.1em;
   color: var(--muted);
   font-weight: 700;
   margin-bottom: 0.25rem;
@@ -543,19 +629,20 @@ details summary {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 0.4rem 0.7rem;
-  color: var(--text);
+  color: var(--ink);
   text-decoration: none;
   font-size: 0.85rem;
   font-weight: 500;
-  transition: border-color 150ms ease;
+  transition: border-color 150ms ease, color 150ms ease;
 }
 .dests a:hover {
   border-color: var(--accent);
+  color: var(--accent);
 }
 
 /* Footer */
 footer {
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--rule);
   padding-top: 1.5rem;
   display: flex;
   flex-direction: column;
@@ -573,14 +660,15 @@ footer {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 0.5rem 0.8rem;
-  color: var(--text);
+  color: var(--ink);
   text-decoration: none;
   font-weight: 600;
   font-size: 0.85rem;
-  transition: border-color 150ms ease;
+  transition: border-color 150ms ease, color 150ms ease;
 }
 .links a:hover {
   border-color: var(--accent);
+  color: var(--accent);
 }
 .fine {
   font-size: 0.75rem;

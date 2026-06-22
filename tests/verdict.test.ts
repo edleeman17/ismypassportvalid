@@ -136,4 +136,27 @@ describe("return-to-UK leg", () => {
     expect(v.ok).toBe(false);
     expect(v.checks.find((c) => c.id === "return-to-uk")?.status).toBe("fail");
   });
+
+  it("passes but flags tight when passport expires on the return date", () => {
+    const v = computeVerdict({
+      passportExpiry: "2026-08-20",
+      outboundDate: "2026-08-01",
+      returnDate: "2026-08-20",
+      country: usa,
+    });
+    expect(v.ok).toBe(true); // legally valid up to and including the expiry date
+    expect(v.tight).toBe(true); // ...but only just — cutting it close
+    expect(v.checks.find((c) => c.id === "return-to-uk")?.tight).toBe(true);
+  });
+
+  it("does not flag tight with comfortable margin", () => {
+    const v = computeVerdict({
+      passportExpiry: "2027-06-01",
+      outboundDate: "2026-08-01",
+      returnDate: "2026-08-20",
+      country: usa,
+    });
+    expect(v.ok).toBe(true);
+    expect(v.tight).toBe(false);
+  });
 });

@@ -20,6 +20,12 @@ function visaNote(c: Country): string {
   return "Check the visa requirements for your trip on gov.uk.";
 }
 
+// A link is "live" only if it has a real URL — placeholders ("#", "", undefined)
+// are hidden until a real affiliate/destination URL is configured.
+function liveLink(url?: string): boolean {
+  return !!url && url !== "#";
+}
+
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
 const form = $<HTMLFormElement>("checker");
@@ -185,7 +191,14 @@ function render(v: Verdict, country: Country, expiry: string) {
         title: "Almost — we need a bit more",
         sub: "Some checks passed but one needs more info (see below).",
       }
-    : v.ok
+    : v.ok && v.tight
+      ? {
+          cls: "maybe",
+          icon: "✓",
+          title: "Valid — but cutting it close",
+          sub: "Your passport only just meets the rules. Renew before you travel to be safe (see below).",
+        }
+      : v.ok
       ? {
           cls: "ok",
           icon: "✓",
@@ -202,7 +215,7 @@ function render(v: Verdict, country: Country, expiry: string) {
   const checksHtml = v.checks
     .map(
       (c) => `<li>
-        <span class="m ${c.status}">${c.status === "pass" ? "✓" : c.status === "fail" ? "✗" : "?"}</span>
+        <span class="m ${c.tight ? "tight" : c.status}">${c.tight ? "⚠" : c.status === "pass" ? "✓" : c.status === "fail" ? "✗" : "?"}</span>
         <span><span class="lbl">${esc(c.label)}</span><br><span class="det">${esc(c.detail)}</span></span>
       </li>`,
     )
@@ -219,7 +232,7 @@ function render(v: Verdict, country: Country, expiry: string) {
 
     <div class="actions">
       ${!v.ok && !v.incomplete ? `<a class="act act-warn" href="https://www.gov.uk/renew-adult-passport" target="_blank" rel="noopener">🛂 Renew your UK passport →</a>` : ""}
-      <a class="act act-primary" href="${esc(config.insuranceUrl)}" target="_blank" rel="sponsored noopener">🛡️ Get travel insurance for ${esc(country.name)} →</a>
+      ${liveLink(config.insuranceUrl) ? `<a class="act act-primary" href="${esc(config.insuranceUrl)}" target="_blank" rel="sponsored noopener">🛡️ Get travel insurance for ${esc(country.name)} →</a>` : ""}
       <button type="button" id="reminder-btn" class="act act-soft">📅 Add a passport renewal reminder</button>
     </div>
 
@@ -349,12 +362,13 @@ function esc(s: string): string {
   );
 }
 
-// Contextual affiliate / useful links (placeholders — swap in real affiliate URLs).
+// Contextual affiliate / useful links. Placeholder hrefs ("#") are hidden until a
+// real affiliate URL is set, so we never show a dead link.
 const links = [
   { label: "Renew your passport (gov.uk)", href: "https://www.gov.uk/renew-adult-passport", aff: false },
   { label: "Travel insurance", href: "#", aff: true },
   { label: "eSIM data abroad", href: "#", aff: true },
-];
+].filter((l) => liveLink(l.href));
 $<HTMLDivElement>("affiliate").innerHTML = links
   .map(
     (l) =>

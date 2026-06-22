@@ -136,9 +136,13 @@ for (const [slug, c] of entries) {
       <p><a href="${esc(c.sourceUrl)}" target="_blank" rel="noopener">Official ${esc(c.name)} entry requirements on gov.uk →</a></p>
       <p>Enter your passport and travel dates above for an instant yes/no for your exact trip, including your return to the UK.</p>
     </div>
-    <div class="actions">
+    ${
+      config.insuranceUrl && config.insuranceUrl !== "#"
+        ? `<div class="actions">
       <a class="act act-primary" href="${esc(config.insuranceUrl)}" target="_blank" rel="sponsored noopener">🛡️ Get travel insurance for ${esc(c.name)} →</a>
-    </div>
+    </div>`
+        : ""
+    }
     <div class="card ess">
       <h2>Travel essentials for ${esc(c.name)}</h2>
       <p class="ess-sub">Handpicked on Amazon for your trip 👇</p>
