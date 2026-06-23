@@ -701,6 +701,69 @@ details summary {
   color: var(--amazon-text);
 }
 
+/* Related-links cards (hub-and-spoke internal linking) */
+.rel h2 {
+  margin: 0 0 0.75rem;
+  font-family: var(--serif);
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+.rellinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.rellinks a {
+  background: hsl(44 40% 99%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 0.7rem;
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: border-color 150ms ease, color 150ms ease;
+}
+.rellinks a:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Validity-by-country table */
+.rule-table-wrap {
+  overflow-x: auto;
+}
+.rule-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.rule-table th,
+.rule-table td {
+  text-align: left;
+  padding: 0.6rem 0.6rem;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+.rule-table th {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  font-weight: 700;
+}
+.rule-table td a {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+.rule-table td a:hover {
+  text-decoration: underline;
+}
+.rule-table tr:last-child td {
+  border-bottom: none;
+}
+
 /* "Check by destination" links */
 .dests {
   display: flex;

@@ -60,6 +60,54 @@ const linksHtml =
   `<span class="dests-label">Check by destination</span>` +
   entries.map(([slug, c]) => `<a href="/${slug}/">${esc(c.name)}</a>`).join("");
 
+const YEAR = new Date().getFullYear();
+
+// Slugify a place name (used for both page generation and internal links).
+function slugifyPlace(alias) {
+  return alias
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+// Precompute the place pages each country owns (filtered + globally de-duped), so
+// page generation and the "popular places" internal links stay consistent.
+const usedPlaceSlugs = new Set();
+const placesByCountry = {};
+for (const [slug, c] of entries) {
+  const list = [];
+  for (const alias of aliases[slug] ?? []) {
+    if (/^[A-Z]{3}$/.test(alias)) continue; // skip IATA codes
+    if (alias.toLowerCase() === c.name.toLowerCase()) continue;
+    const placeSlug = slugifyPlace(alias);
+    if (!placeSlug || countrySlugs.has(placeSlug) || usedPlaceSlugs.has(placeSlug)) continue;
+    usedPlaceSlugs.add(placeSlug);
+    list.push({ label: alias, placeSlug });
+  }
+  placesByCountry[slug] = list;
+}
+
+const schengen = entries.filter(([, c]) => c.zone === "schengen").map(([slug, c]) => ({ slug, name: c.name }));
+
+// A card of related internal links (hub-and-spoke). Empty -> nothing.
+function relatedBlock(title, links) {
+  if (!links.length) return "";
+  return `<div class="card rel"><h2>${esc(title)}</h2><nav class="rellinks">${links
+    .map((l) => `<a href="${l.href}">${esc(l.label)}</a>`)
+    .join("")}</nav></div>`;
+}
+
+// Short requirement phrase for the by-country table.
+function shortReq(c) {
+  const r = c.rule;
+  if (r.validBeyondDays) return `${r.validBeyondDays} days after you leave`;
+  if (r.validBeyondMonths > 0)
+    return `${r.validBeyondMonths} month${r.validBeyondMonths === 1 ? "" : "s"} after you ${r.anchor === "departure" ? "leave" : "arrive"}`;
+  return "Whole of your stay";
+}
+
 // ---- rule phrasing ----
 function ruleSentence(c) {
   const r = c.rule;
@@ -245,7 +293,7 @@ fs.writeFileSync(
     desc: "Check if your UK passport is valid for your destination and your return to the UK. Entry rules sourced from gov.uk. Instant yes/no.",
     h1: "Is my passport valid?",
     introHtml: `For <strong>British citizen</strong> passport holders. We check your destination's entry rules <em>and</em> your return to the UK.`,
-    contentHtml: `<div class="card seo-block"><h2>How long does my passport need to be valid?</h2><p>It depends where you're going. Many countries require your passport to be valid for <strong>6 months after you arrive</strong>; the Schengen area needs it valid <strong>3 months after you leave</strong> and issued within the last 10 years; others just need it valid for your stay. Choose your destination above, or pick a country below.</p><p><a href="/eu-entry-ees-etias/">Travelling to Europe? Read about EES &amp; ETIAS →</a> · <a href="/schengen-calculator/">Schengen 90/180 day calculator →</a> · <a href="/about/">How we verify these rules →</a></p></div>`,
+    contentHtml: `<div class="card seo-block"><h2>How long does my passport need to be valid?</h2><p>It depends where you're going. Many countries require your passport to be valid for <strong>6 months after you arrive</strong>; the Schengen area needs it valid <strong>3 months after you leave</strong> and issued within the last 10 years; others just need it valid for your stay. Choose your destination above, or pick a country below.</p><p><strong>Guides:</strong> <a href="/passport-validity-by-country/">Validity rules by country</a> · <a href="/six-month-passport-rule/">The 6-month rule</a> · <a href="/schengen-countries/">Schengen countries</a> · <a href="/eu-entry-ees-etias/">EES &amp; ETIAS</a> · <a href="/schengen-calculator/">90/180 calculator</a> · <a href="/uk-passport-renewal-time/">Renewal times</a> · <a href="/about/">How we verify</a></p></div>`,
     urlPath: "/",
     schemas: [webApp],
   }),
@@ -268,6 +316,8 @@ for (const [slug, c] of entries) {
       <p>Enter your passport and travel dates above for an instant yes/no for your exact trip, including your return to the UK.</p>
     </div>
     ${faq.html}
+    ${relatedBlock(`Popular places in ${c.name}`, placesByCountry[slug].slice(0, 18).map((p) => ({ href: `/${p.placeSlug}/`, label: p.label })))}
+    ${c.zone === "schengen" ? relatedBlock("Other Schengen destinations", schengen.filter((x) => x.slug !== slug).map((x) => ({ href: `/${x.slug}/`, label: x.name }))) : ""}
     ${insuranceBlock(c.name)}
     ${essentialsBlock(slug, c.name)}`;
   const crumb = breadcrumb([
@@ -277,7 +327,7 @@ for (const [slug, c] of entries) {
   write(
     `/${slug}/`,
     page({
-      title: `Is my passport valid for ${c.name}? UK passport rules`,
+      title: `Is my passport valid for ${c.name}? UK passport rules (${YEAR})`,
       desc: `Check if your UK passport meets ${c.name}'s entry requirements and your return to the UK. Your passport must be ${sentence}. Source: gov.uk.`,
       h1: `Is my passport valid for ${c.name}?`,
       introHtml: `Check if your <strong>UK passport</strong> is valid for <strong>${esc(c.name)}</strong> — and for getting back into the UK.`,
@@ -289,18 +339,13 @@ for (const [slug, c] of entries) {
   );
   sitemap.push({ loc: `${SITE_URL}/${slug}/`, lastmod: c.lastVerified });
 
-  // ---- place/island/city pages for this country ----
-  for (const alias of aliases[slug] ?? []) {
-    if (/^[A-Z]{3}$/.test(alias)) continue; // skip IATA codes
-    if (alias.toLowerCase() === c.name.toLowerCase()) continue;
-    const placeSlug = alias
-      .normalize("NFD")
-      .replace(/[̀-ͯ]/g, "")
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "");
-    if (!placeSlug || countrySlugs.has(placeSlug)) continue; // don't clobber a country page
+  // ---- place/island/city pages for this country (from the precomputed map) ----
+  for (const { label: alias, placeSlug } of placesByCountry[slug]) {
     const pfaq = faqBlock(faqForPlace(alias, c));
+    const siblings = placesByCountry[slug]
+      .filter((p) => p.placeSlug !== placeSlug)
+      .slice(0, 12)
+      .map((p) => ({ href: `/${p.placeSlug}/`, label: p.label }));
     const pcontent = `<div class="card seo-block">
         <h2>Is my passport valid for ${esc(alias)}?</h2>
         <p class="rule-line">${esc(alias)} is in <a href="/${slug}/">${esc(c.name)}</a>, so ${esc(c.name)}'s UK passport rules apply: your passport must be ${esc(sentence)}.</p>
@@ -312,6 +357,7 @@ for (const [slug, c] of entries) {
         <p>Enter your passport and travel dates above for an instant yes/no for ${esc(alias)}, including your return to the UK.</p>
       </div>
       ${pfaq.html}
+      ${relatedBlock(`More places in ${c.name}`, [{ href: `/${slug}/`, label: `All of ${c.name}` }, ...siblings])}
       ${insuranceBlock(c.name)}
       ${essentialsBlock(slug, c.name)}`;
     const pcrumb = breadcrumb([
@@ -322,7 +368,7 @@ for (const [slug, c] of entries) {
     write(
       `/${placeSlug}/`,
       page({
-        title: `Is my passport valid for ${alias}? (${c.name}) UK rules`,
+        title: `Is my passport valid for ${alias}? (${c.name}) ${YEAR} rules`,
         desc: `${alias} is in ${c.name}. Check your UK passport meets ${c.name}'s entry requirements and your return to the UK. Your passport must be ${sentence}.`,
         h1: `Is my passport valid for ${alias}?`,
         introHtml: `<strong>${esc(alias)}</strong> is in <strong>${esc(c.name)}</strong> — check your <strong>UK passport</strong> meets the rules, including your return to the UK.`,
@@ -389,6 +435,120 @@ write(
   }),
 );
 sitemap.push({ loc: `${SITE_URL}/eu-entry-ees-etias/`, lastmod: TODAY });
+
+// ---- Pillar: passport validity rules by country (table + 6-month callout) ----
+const sixMonth = entries.filter(([, c]) => (c.rule.validBeyondMonths ?? 0) >= 6);
+const sixMonthLinks = sixMonth.map(([s, c]) => `<a href="/${s}/">${esc(c.name)}</a>`).join(", ");
+const tableRows = entries
+  .map(
+    ([slug, c]) =>
+      `<tr><td><a href="/${slug}/">${esc(c.name)}</a></td><td>${esc(shortReq(c))}</td><td>${c.rule.issuedWithinYears ? `${c.rule.issuedWithinYears} years` : "—"}</td></tr>`,
+  )
+  .join("");
+write(
+  "/passport-validity-by-country/",
+  page({
+    title: `UK passport validity rules by country (${YEAR})`,
+    desc: `How long your UK passport must be valid for ${entries.length} popular destinations, and which countries need 6 months. Sourced from gov.uk.`,
+    h1: "UK passport validity rules by country",
+    introHtml: `How much validity your <strong>UK passport</strong> needs, country by country — and which ones really need six months.`,
+    contentHtml: `<div class="card seo-block">
+        <h2>How much validity do you need?</h2>
+        <p>It depends where you're going, and whether the rule is counted from the day you <em>arrive</em> or the day you <em>leave</em>. This table covers our ${entries.length} most-searched destinations — tap any for an exact yes/no for your dates.</p>
+      </div>
+      <div class="card seo-block">
+        <h2>Which countries need 6 months' validity?</h2>
+        <p>These commonly need around six months left on the day you travel: ${sixMonthLinks}.</p>
+        <p>Many others — including the whole <a href="/schengen-countries/">Schengen area</a> — do <strong>not</strong>. Don't assume the six-month rule; <a href="/six-month-passport-rule/">here's how it actually works</a>.</p>
+      </div>
+      <div class="card rule-table-wrap">
+        <table class="rule-table">
+          <thead><tr><th>Country</th><th>Passport must stay valid</th><th>Issued within</th></tr></thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+        <p class="fine">Rules sourced from gov.uk. Always confirm before you travel.</p>
+      </div>`,
+    urlPath: "/passport-validity-by-country/",
+    schemas: [breadcrumb([{ name: "Home", path: "/" }, { name: "Passport validity by country", path: "/passport-validity-by-country/" }])],
+  }),
+);
+sitemap.push({ loc: `${SITE_URL}/passport-validity-by-country/`, lastmod: TODAY });
+
+// ---- Schengen countries list ----
+write(
+  "/schengen-countries/",
+  page({
+    title: `Schengen countries list & UK passport rules (${YEAR})`,
+    desc: `The Schengen countries and the UK passport rules: valid 3 months after you leave, issued within 10 years, and the 90/180-day limit.`,
+    h1: "Schengen countries & passport rules",
+    introHtml: `Every Schengen country shares one <strong>UK passport</strong> rule — here's what it is and where it applies.`,
+    contentHtml: `<div class="card seo-block">
+        <h2>The Schengen passport rule</h2>
+        <p>For the whole Schengen area, your UK passport must be valid for at least <strong>3 months after the day you leave</strong> and have been <strong>issued less than 10 years</strong> before you arrive. You can also stay at most <strong>90 days in any 180-day period</strong> — work yours out with the <a href="/schengen-calculator/">Schengen 90/180 calculator</a>.</p>
+        <p>Biometric checks are changing too: see <a href="/eu-entry-ees-etias/">EES &amp; ETIAS for UK travellers</a>.</p>
+      </div>
+      ${relatedBlock("Schengen destinations we cover", schengen.map((x) => ({ href: `/${x.slug}/`, label: x.name })))}`,
+    urlPath: "/schengen-countries/",
+    schemas: [breadcrumb([{ name: "Home", path: "/" }, { name: "Schengen countries", path: "/schengen-countries/" }])],
+  }),
+);
+sitemap.push({ loc: `${SITE_URL}/schengen-countries/`, lastmod: TODAY });
+
+// ---- Explainer: the 6-month rule ----
+const sixFaq = faqBlock([
+  { q: "What is the 6-month passport rule?", a: "Many countries require your passport to have at least six months left when you arrive (some count from when you leave). It's common but not universal — large regions like the Schengen area use a different rule." },
+  { q: "Which countries need 6 months on your passport?", a: `Common ones include ${sixMonth.map(([, c]) => c.name).join(", ")}. Always check the exact country, as rules change.` },
+  { q: "Does Europe need 6 months' passport validity?", a: "No. The Schengen area needs your passport valid for 3 months after you leave and issued within the last 10 years — not a full six months." },
+]);
+write(
+  "/six-month-passport-rule/",
+  page({
+    title: `The 6-month passport rule explained (${YEAR})`,
+    desc: `What the 6-month passport rule means, which countries use it, and which don't. Check your exact dates free, sourced from gov.uk.`,
+    h1: "The 6-month passport rule, explained",
+    introHtml: `The rule that catches travellers out at check-in — what it means and where it actually applies.`,
+    contentHtml: `<div class="card seo-block">
+        <h2>What it is</h2>
+        <p>Lots of countries require your passport to have at least six months left when you travel. But it's far from universal: some count from the day you arrive, some from the day you leave, and big regions like the <a href="/schengen-countries/">Schengen area</a> use a different rule entirely (3 months after you leave). Assuming "six months everywhere" is exactly how people get turned away at the airport.</p>
+        <p>Countries that commonly need around six months: ${sixMonthLinks}. See the full <a href="/passport-validity-by-country/">validity rules by country</a>, or <a href="/">check your exact dates</a>.</p>
+      </div>
+      ${sixFaq.html}`,
+    urlPath: "/six-month-passport-rule/",
+    schemas: [sixFaq.schema, breadcrumb([{ name: "Home", path: "/" }, { name: "The 6-month passport rule", path: "/six-month-passport-rule/" }])],
+  }),
+);
+sitemap.push({ loc: `${SITE_URL}/six-month-passport-rule/`, lastmod: TODAY });
+
+// ---- Explainer: UK passport renewal time ----
+const renewFaq = faqBlock([
+  { q: "How long does it take to renew a UK passport?", a: "Allow up to about 3 weeks for a standard online renewal, though it can take longer at busy times. Faster options exist if you're short on time." },
+  { q: "Can I get a passport urgently?", a: "Yes — the Online Premium service can be same-day and the 1 week Fast Track is also available, both by appointment and at extra cost. See gov.uk's urgent passport service." },
+  { q: "When should I renew before travelling?", a: "Well ahead — many countries need 3 to 6 months of validity, so don't wait until your passport is nearly expired. Check your destination's exact rule first." },
+]);
+write(
+  "/uk-passport-renewal-time/",
+  page({
+    title: `How long does it take to renew a UK passport? (${YEAR})`,
+    desc: `UK passport renewal times: standard ~3 weeks, plus same-day and 1-week urgent options. When to renew before you travel.`,
+    h1: "How long does it take to renew a UK passport?",
+    introHtml: `Renewal times, the urgent options, and how long before a trip you should renew.`,
+    contentHtml: `<div class="card seo-block">
+        <h2>Standard and urgent times</h2>
+        <p>HM Passport Office advises allowing up to <strong>3 weeks</strong> for a standard online renewal, though it can run longer when it's busy. If you're short on time there are faster, paid options:</p>
+        <ul>
+          <li><strong>Online Premium</strong> — collect a passport the same day (by appointment).</li>
+          <li><strong>1 week Fast Track</strong> — apply in person, passport posted within a week.</li>
+        </ul>
+        <p>See the official <a href="https://www.gov.uk/get-a-passport-urgently" target="_blank" rel="noopener">urgent passport service</a> and the standard <a href="https://www.gov.uk/renew-adult-passport" target="_blank" rel="noopener">renewal page</a> on gov.uk.</p>
+        <h2>Renew before it bites</h2>
+        <p>Many countries need 3 to 6 months of validity left, so renew well before you travel — not when it's almost expired. <a href="/">Check whether your passport is still valid for your trip →</a></p>
+      </div>
+      ${renewFaq.html}`,
+    urlPath: "/uk-passport-renewal-time/",
+    schemas: [renewFaq.schema, breadcrumb([{ name: "Home", path: "/" }, { name: "UK passport renewal time", path: "/uk-passport-renewal-time/" }])],
+  }),
+);
+sitemap.push({ loc: `${SITE_URL}/uk-passport-renewal-time/`, lastmod: TODAY });
 
 // ---- Schengen calculator (built by Vite as a separate entry) ----
 sitemap.push({ loc: `${SITE_URL}/schengen-calculator/`, lastmod: TODAY });
