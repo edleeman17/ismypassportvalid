@@ -351,7 +351,9 @@ write(
         <h2>How current it is</h2>
         <p>Each destination shows the date its rule was last verified against gov.uk. Rules drift, so we re-check them on a monthly cycle, and you can always open the live gov.uk wording from any result. <strong>Always confirm on gov.uk and with your airline before you travel.</strong></p>
         <h2>Your privacy</h2>
-        <p>Your passport dates are checked entirely in your browser. They are never sent to us, logged or stored.</p>
+        <p>Your passport dates are checked entirely in your browser. They are never sent to us, logged or stored. Analytics are cookieless, so there's no tracking and no consent banner.</p>
+        <h2>Open source</h2>
+        <p>This site is open source — you can read every line, including the privacy claims above, on <a href="https://github.com/edleeman17/ismypassportvalid" target="_blank" rel="noopener">GitHub</a>.</p>
         <h2>No liability</h2>
         <p>This is not official advice and may be out of date or wrong. We accept no responsibility for any loss arising from incorrect or outdated information. The final responsibility for your documents is yours, your airline's and the destination's border authorities'.</p>
       </div>`,
