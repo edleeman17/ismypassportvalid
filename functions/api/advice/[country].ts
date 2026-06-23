@@ -32,13 +32,13 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   try {
     const res = await fetch(upstream, {
       headers: { Accept: "application/json", "User-Agent": "passport-valid (gov.uk content proxy)" },
-      cf: { cacheTtl: 21600, cacheEverything: true },
+      cf: { cacheTtl: 86400, cacheEverything: true },
     });
     if (!res.ok) {
       return json({ error: `gov.uk returned ${res.status}` }, res.status === 404 ? 404 : 502);
     }
     const data = await res.json();
-    return json(data, 200, "public, max-age=21600");
+    return json(data, 200, "public, max-age=86400");
   } catch {
     return json({ error: "could not reach gov.uk" }, 502);
   }
