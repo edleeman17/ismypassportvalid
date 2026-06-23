@@ -1,0 +1,46 @@
+name: Verify gov.uk rules
+
+# Monthly drift check: detects when gov.uk's passport-validity wording changes
+# for a curated country and opens an issue to re-verify the rule by hand.
+# Deterministic — no API key, no LLM, the human stays the gate. Replaces the
+# old Claude cloud routine.
+
+on:
+  schedule:
+    - cron: "0 8 1 * *" # 08:00 UTC on the 1st of each month
+  workflow_dispatch: {}
+
+permissions:
+  contents: write # commit the updated snapshot baseline
+  issues: write # open the drift issue
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - id: check
+        run: node scripts/verify-rules.mjs
+
+      - name: Open issue on drift
+        if: steps.check.outputs.changed != '0' && steps.check.outputs.changed != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create \
+            --title "Monthly gov.uk rule check: ${{ steps.check.outputs.changed }} to re-verify" \
+            --body-file verify-report.md
+
+      - name: Commit updated snapshot
+        run: |
+          if ! git diff --quiet scripts/rule-snapshots.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add scripts/rule-snapshots.json
+            git commit -m "chore: update gov.uk rule snapshots [skip ci]"
+            git push
+          fi
