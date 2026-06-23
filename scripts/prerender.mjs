@@ -79,10 +79,21 @@ function page({ title, desc, h1, introHtml, contentHtml, slug }) {
     `<meta property="og:title" content="${esc(title)}" />`,
     `<meta property="og:description" content="${esc(desc)}" />`,
     `<meta property="og:type" content="website" />`,
+    `<meta property="og:site_name" content="Is My Passport Valid?" />`,
+    `<meta name="twitter:card" content="summary_large_image" />`,
+    `<meta name="twitter:title" content="${esc(title)}" />`,
+    `<meta name="twitter:description" content="${esc(desc)}" />`,
   ];
   if (SITE_URL) {
     const url = slug ? `${SITE_URL}/${slug}/` : `${SITE_URL}/`;
+    const ogImage = `${SITE_URL}/og.png`;
     head.unshift(`<link rel="canonical" href="${url}" />`, `<meta property="og:url" content="${url}" />`);
+    head.push(
+      `<meta property="og:image" content="${ogImage}" />`,
+      `<meta property="og:image:width" content="1200" />`,
+      `<meta property="og:image:height" content="630" />`,
+      `<meta name="twitter:image" content="${ogImage}" />`,
+    );
   }
   if (slug) {
     const c = countries[slug];
@@ -172,6 +183,21 @@ for (const [slug, c] of entries) {
     }),
   );
 }
+
+// 404 — branded, reuses the template so the destination search still works.
+// Cloudflare Pages serves /404.html automatically for unmatched routes.
+const notFound = page({
+  title: "Page not found — Is My Passport Valid?",
+  desc: "That page doesn't exist. Check whether your UK passport is valid for your destination.",
+  h1: "Page not found",
+  introHtml: `We couldn't find that page. Search your destination below to check your passport.`,
+  contentHtml: `<div class="card seo-block">
+      <h2>Lost your way?</h2>
+      <p>Enter your passport and travel dates above, or <a href="/">go back to the homepage</a>.</p>
+    </div>`,
+  slug: null,
+}).replace("</head>", `  <meta name="robots" content="noindex" />\n  </head>`);
+fs.writeFileSync(path.join(dist, "404.html"), notFound);
 
 // robots.txt + sitemap.xml
 fs.writeFileSync(

@@ -427,6 +427,9 @@ button:active {
   border-bottom: none;
 }
 .checks .m {
+  flex: none;
+  min-width: 1.5rem;
+  text-align: center;
   font-size: 1.1rem;
   font-weight: 800;
   line-height: 1.4;
