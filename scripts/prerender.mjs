@@ -245,7 +245,7 @@ fs.writeFileSync(
     desc: "Check if your UK passport is valid for your destination and your return to the UK. Entry rules sourced from gov.uk. Instant yes/no.",
     h1: "Is my passport valid?",
     introHtml: `For <strong>British citizen</strong> passport holders. We check your destination's entry rules <em>and</em> your return to the UK.`,
-    contentHtml: `<div class="card seo-block"><h2>How long does my passport need to be valid?</h2><p>It depends where you're going. Many countries require your passport to be valid for <strong>6 months after you arrive</strong>; the Schengen area needs it valid <strong>3 months after you leave</strong> and issued within the last 10 years; others just need it valid for your stay. Choose your destination above, or pick a country below.</p><p><a href="/eu-entry-ees-etias/">Travelling to Europe? Read about EES &amp; ETIAS →</a> · <a href="/about/">How we verify these rules →</a></p></div>`,
+    contentHtml: `<div class="card seo-block"><h2>How long does my passport need to be valid?</h2><p>It depends where you're going. Many countries require your passport to be valid for <strong>6 months after you arrive</strong>; the Schengen area needs it valid <strong>3 months after you leave</strong> and issued within the last 10 years; others just need it valid for your stay. Choose your destination above, or pick a country below.</p><p><a href="/eu-entry-ees-etias/">Travelling to Europe? Read about EES &amp; ETIAS →</a> · <a href="/schengen-calculator/">Schengen 90/180 day calculator →</a> · <a href="/about/">How we verify these rules →</a></p></div>`,
     urlPath: "/",
     schemas: [webApp],
   }),
@@ -387,6 +387,9 @@ write(
   }),
 );
 sitemap.push({ loc: `${SITE_URL}/eu-entry-ees-etias/`, lastmod: TODAY });
+
+// ---- Schengen calculator (built by Vite as a separate entry) ----
+sitemap.push({ loc: `${SITE_URL}/schengen-calculator/`, lastmod: TODAY });
 
 // ---- 404 ----
 fs.writeFileSync(

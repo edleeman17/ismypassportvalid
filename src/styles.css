@@ -394,6 +394,21 @@ button:active {
   border-color: var(--accent);
 }
 
+/* "Renew in time?" note */
+.renew-note {
+  margin: 0;
+  background: var(--paper-2);
+  border-left: 3px solid var(--gold);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: 0.7rem 0.85rem;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+.renew-note a {
+  color: var(--accent);
+  font-weight: 600;
+}
+
 /* Visa + ETIAS info lines */
 .visa-line,
 .etias-line {
@@ -553,6 +568,26 @@ details summary {
 }
 .seo-block a:hover {
   text-decoration: underline;
+}
+
+/* Schengen calculator: trip rows */
+.stay-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 0.6rem;
+  align-items: end;
+  margin-bottom: 0.85rem;
+}
+.stay-row .s-del {
+  width: auto;
+  padding: 0.65rem 0.8rem;
+  min-height: 46px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+#add-stay {
+  width: auto;
+  align-self: flex-start;
 }
 
 /* FAQ accordion (prerendered Q&A) */

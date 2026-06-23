@@ -174,7 +174,7 @@ form.addEventListener("submit", (e) => {
     country,
   });
 
-  render(verdict, country, expiry);
+  render(verdict, country, expiry, outbound);
   resultEl.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
@@ -183,7 +183,26 @@ function showError(msg: string) {
   errorEl.classList.remove("hidden");
 }
 
-function render(v: Verdict, country: Country, expiry: string) {
+// Rough weeks between today and an ISO date (UTC).
+function weeksUntil(iso: string): number {
+  const target = new Date(iso + "T00:00:00Z").getTime();
+  return Math.floor((target - Date.now()) / (7 * 86_400_000));
+}
+
+// "Can I renew in time?" guidance. HMPO standard service is ~3 weeks but can run
+// longer; urgent services exist. Shown when a renewal is implied.
+function renewTiming(outbound: string): string {
+  const wks = weeksUntil(outbound);
+  if (wks < 0) return "";
+  const urgent = wks < 4;
+  return `<p class="renew-note">⏳ <strong>Renewing in time?</strong> UK passport renewals currently take around <strong>3 weeks</strong> (allow longer at busy times). Your trip is in about <strong>${wks} week${wks === 1 ? "" : "s"}</strong>.${
+    urgent
+      ? ` That's tight — consider the <a href="https://www.gov.uk/get-a-passport-urgently" target="_blank" rel="noopener">urgent / fast-track service</a>.`
+      : ` Apply now at <a href="https://www.gov.uk/renew-adult-passport" target="_blank" rel="noopener">gov.uk</a> to be safe.`
+  }</p>`;
+}
+
+function render(v: Verdict, country: Country, expiry: string, outbound: string) {
   const banner = v.incomplete
     ? {
         cls: "maybe",
@@ -235,6 +254,7 @@ function render(v: Verdict, country: Country, expiry: string) {
       ${liveLink(config.insuranceUrl) ? `<a class="act act-primary" href="${esc(config.insuranceUrl)}" target="_blank" rel="sponsored noopener">🛡️ Get travel insurance for ${esc(country.name)} →</a>` : ""}
       <button type="button" id="reminder-btn" class="act act-soft">📅 Add a passport renewal reminder</button>
     </div>
+    ${(!v.ok && !v.incomplete) || v.tight ? renewTiming(outbound) : ""}
 
     <div class="card src">
       <h2>Source — gov.uk</h2>

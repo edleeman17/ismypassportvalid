@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Schengen 90/180 Day Calculator — free, for UK travellers</title>
+    <meta
+      name="description"
+      content="Free Schengen 90/180-day calculator. Add your trips and see how many of your 90 days you've used in any 180-day period, and how many remain."
+    />
+    <link rel="canonical" href="https://ismypassportvalid.co.uk/schengen-calculator/" />
+    <meta property="og:title" content="Schengen 90/180 Day Calculator" />
+    <meta property="og:description" content="See how many of your 90 Schengen days you've used in any 180-day period, and how many remain." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://ismypassportvalid.co.uk/schengen-calculator/" />
+    <meta property="og:image" content="https://ismypassportvalid.co.uk/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://ismypassportvalid.co.uk/og.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#0b1d3a" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <script defer data-domain="ismypassportvalid.co.uk" src="https://clicks.bowlerdesign.co.uk/js/script.outbound-links.js"></script>
+    <script>
+      window.plausible = window.plausible || function () { (window.plausible.q = window.plausible.q || []).push(arguments); };
+    </script>
+    <script type="application/ld+json">
+      {"@context":"https://schema.org","@type":"WebApplication","name":"Schengen 90/180 Day Calculator","url":"https://ismypassportvalid.co.uk/schengen-calculator/","applicationCategory":"TravelApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"GBP"}}
+    </script>
+  </head>
+  <body>
+    <main class="wrap">
+      <header class="head">
+        <div class="badge">🗓️</div>
+        <h1>Schengen 90/180 calculator</h1>
+        <p>
+          Visitors can spend at most <strong>90 days in any 180</strong> in the Schengen area. Add
+          your trips to see what you've used and what's left.
+        </p>
+      </header>
+
+      <form id="calc-form" class="card">
+        <div id="stays"></div>
+        <button type="button" id="add-stay" class="act act-soft">＋ Add another trip</button>
+        <label class="field">
+          Check my days as of
+          <input id="ref-date" type="date" required />
+        </label>
+        <button type="submit">Calculate my days</button>
+        <p id="calc-error" class="form-error hidden"></p>
+      </form>
+
+      <section id="calc-result" class="hidden" aria-live="polite"></section>
+
+      <section class="disclaimer">
+        <strong>Not official advice.</strong> This is a guide only — it counts the trips you enter and
+        cannot see other trips or border records. Always confirm on
+        <a href="https://www.gov.uk/travel-to-eu-schengen-area" target="_blank" rel="noopener">gov.uk</a>.
+      </section>
+
+      <footer>
+        <div class="links">
+          <a href="/">Is my passport valid?</a>
+          <a href="/eu-entry-ees-etias/">EES &amp; ETIAS guide</a>
+          <a href="/about/">About</a>
+        </div>
+        <p class="fine">
+          Contains public sector information from
+          <a href="https://www.gov.uk/travel-to-eu-schengen-area" target="_blank" rel="noopener">gov.uk</a>,
+          licensed under the
+          <a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" target="_blank" rel="noopener">Open Government Licence v3.0</a>.
+        </p>
+      </footer>
+    </main>
+
+    <script type="module" src="/src/schengen.ts"></script>
+  </body>
+</html>
