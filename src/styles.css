@@ -555,6 +555,61 @@ details summary {
   text-decoration: underline;
 }
 
+/* FAQ accordion (prerendered Q&A) */
+.faq h2 {
+  margin: 0 0 0.6rem;
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+.faq details {
+  border-bottom: 1px solid var(--rule);
+}
+.faq details:last-of-type {
+  border-bottom: none;
+}
+.faq summary {
+  cursor: pointer;
+  padding: 0.85rem 0;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--ink);
+  list-style: none;
+  position: relative;
+  padding-right: 1.5rem;
+}
+.faq summary::-webkit-details-marker {
+  display: none;
+}
+.faq summary::after {
+  content: "+";
+  position: absolute;
+  right: 0.25rem;
+  top: 0.7rem;
+  font-weight: 700;
+  color: var(--accent);
+  font-size: 1.1rem;
+}
+.faq details[open] summary::after {
+  content: "−";
+}
+.faq-a {
+  padding: 0 0 0.85rem;
+}
+.faq-a p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+.verified-line {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.verified-line a {
+  color: var(--accent);
+}
+
 /* Affiliate "Travel essentials" cards */
 .ess h2 {
   margin: 0 0 0.1rem;
