@@ -62,6 +62,15 @@ export function peakUsage(stays: Stay[]): { date: string; used: number } | null 
 }
 
 // ---- DOM ----
+declare global {
+  interface Window {
+    plausible?: (event: string, opts?: { props?: Record<string, string> }) => void;
+  }
+}
+function track(event: string, props?: Record<string, string>) {
+  window.plausible?.(event, props ? { props } : undefined);
+}
+
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const rows = $<HTMLDivElement>("stays");
 const today = new Date().toISOString().slice(0, 10);
@@ -93,19 +102,20 @@ $("calc-form").addEventListener("submit", (e) => {
     const start = (row.querySelector(".s-start") as HTMLInputElement).value;
     const end = (row.querySelector(".s-end") as HTMLInputElement).value;
     if (start && end) {
-      if (end < start) return showError("One of your trips ends before it starts.");
+      if (end < start) return showError("One of your trips ends before it starts.", "end-before-start");
       stays.push({ start, end });
     }
   }
-  if (!stays.length) return showError("Add at least one trip with both dates.");
+  if (!stays.length) return showError("Add at least one trip with both dates.", "no-trips");
   const ref = refInput.value || today;
   render(stays, ref);
 });
 
 const errorEl = $<HTMLParagraphElement>("calc-error");
-function showError(msg: string) {
+function showError(msg: string, reason: string) {
   errorEl.textContent = msg;
   errorEl.classList.remove("hidden");
+  track("Schengen Error", { reason });
 }
 
 function render(stays: Stay[], ref: string) {
@@ -114,6 +124,7 @@ function render(stays: Stay[], ref: string) {
   const peak = peakUsage(stays)!;
   const ok = peak.used <= 90;
   const onRef = u.used <= 90;
+  track("Schengen Calculated", { trips: String(stays.length), result: ok ? "within-limit" : "over-limit" });
 
   const banner = ok
     ? { cls: "ok", icon: "✓", title: "Within the 90/180 limit", sub: `Peak ${peak.used} of 90 days used.` }
@@ -134,8 +145,9 @@ function render(stays: Stay[], ref: string) {
     <div class="card src">
       <h2>How the rule works</h2>
       <p style="margin:0;font-size:0.9rem;">You may spend at most <strong>90 days in any rolling 180-day period</strong> in the Schengen area as a visitor. The window moves with you — each day looks back 180 days. This tool counts the days you entered above; it doesn't know about other trips, so add them all.</p>
-      <p class="verified" style="margin-top:0.6rem;">Not official. Confirm on <a href="https://www.gov.uk/travel-to-eu-schengen-area" target="_blank" rel="noopener">gov.uk</a>. Need passport validity too? <a href="/spain/">Check your passport →</a></p>
+      <p class="verified" style="margin-top:0.6rem;">Not official. Confirm on <a href="https://www.gov.uk/travel-to-eu-schengen-area" target="_blank" rel="noopener">gov.uk</a>. Need passport validity too? <a href="/spain/" id="to-passport-checker">Check your passport →</a></p>
     </div>`;
   $("calc-result").classList.remove("hidden");
   $("calc-result").scrollIntoView({ behavior: "smooth", block: "start" });
+  document.getElementById("to-passport-checker")?.addEventListener("click", () => track("Cross-Link Clicked", { to: "passport-checker" }));
 }

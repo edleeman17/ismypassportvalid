@@ -28,6 +28,16 @@ function liveLink(url?: string): boolean {
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
+// Plausible custom event helper (window.plausible stub already installed in index.html).
+declare global {
+  interface Window {
+    plausible?: (event: string, opts?: { props?: Record<string, string> }) => void;
+  }
+}
+function track(event: string, props?: Record<string, string>) {
+  window.plausible?.(event, props ? { props } : undefined);
+}
+
 const form = $<HTMLFormElement>("checker");
 const resultEl = $<HTMLElement>("result");
 const errorEl = $<HTMLParagraphElement>("form-error");
@@ -93,6 +103,7 @@ function choose(e: Entry) {
   hidden.value = e.slug;
   searchInput.value = e.hint ? `${e.label} (${e.hint})` : e.label;
   closeList();
+  track("Destination Selected", { destination: e.hint ?? e.label });
 }
 
 searchInput.addEventListener("input", () => {
@@ -130,7 +141,12 @@ list.addEventListener("mousedown", (ev) => {
   choose(matches[Number(li.getAttribute("data-i"))]);
 });
 
-searchInput.addEventListener("blur", () => setTimeout(closeList, 120));
+searchInput.addEventListener("blur", () => {
+  if (searchInput.value.trim() && !hidden.value && !matches.length) {
+    track("Search No Match", { query: searchInput.value.trim().toLowerCase().slice(0, 40) });
+  }
+  setTimeout(closeList, 120);
+});
 searchInput.addEventListener("focus", () => {
   if (searchInput.value && !hidden.value) {
     matches = search(searchInput.value);
@@ -157,13 +173,14 @@ form.addEventListener("submit", (e) => {
 
   const country = countries[slug];
   if (!country) {
-    return showError("Pick a destination from the list (e.g. start typing Lanzarote, then choose it).");
+    return showError("Pick a destination from the list (e.g. start typing Lanzarote, then choose it).", "no-destination");
   }
   if (!expiry || !issue || !outbound || !ret) {
-    return showError("Please fill in your passport issue + expiry dates and your travel dates.");
+    const missing = [!expiry && "expiry", !issue && "issue", !outbound && "outbound", !ret && "return"].filter(Boolean).join(",");
+    return showError("Please fill in your passport issue + expiry dates and your travel dates.", `missing-dates:${missing}`);
   }
   if (ret < outbound) {
-    return showError("Your return date is before your outbound date.");
+    return showError("Your return date is before your outbound date.", "return-before-outbound");
   }
 
   const verdict = computeVerdict({
@@ -174,13 +191,17 @@ form.addEventListener("submit", (e) => {
     country,
   });
 
+  const result = verdict.incomplete ? "incomplete" : verdict.ok ? (verdict.tight ? "pass-tight" : "pass") : "fail";
+  track("Check Submitted", { destination: country.name, result });
+
   render(verdict, country, expiry, outbound);
   resultEl.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
-function showError(msg: string) {
+function showError(msg: string, reason: string) {
   errorEl.textContent = msg;
   errorEl.classList.remove("hidden");
+  track("Form Error", { reason });
 }
 
 // Rough weeks between today and an ISO date (UTC).
@@ -306,10 +327,14 @@ function render(v: Verdict, country: Country, expiry: string, outbound: string) 
       loaded = true;
       document.getElementById("live")!.textContent = "Loading from gov.uk…";
       loadLive(country.govukSlug);
+      track("Live Rules Viewed", { destination: country.name });
     }
   });
 
-  document.getElementById("reminder-btn")?.addEventListener("click", () => downloadReminder(expiry));
+  document.getElementById("reminder-btn")?.addEventListener("click", () => {
+    track("Reminder Downloaded", { destination: country.name });
+    downloadReminder(expiry);
+  });
 }
 
 // Build + download an .ics calendar event nudging passport renewal ~9 months before expiry.
